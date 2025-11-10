@@ -212,32 +212,26 @@ class EnhancedAutismDetector:
 
         return results
 
-    def predict_autism(self, features_dict):
-        """
-        Predict autism likelihood for a new case
-        """
-        if self.best_model is None:
-            raise ValueError("No model has been trained yet!")
 
-        # Convert features to DataFrame
-        features_df = pd.DataFrame([features_dict])
+    def predict_autism(self, input_data):
+        # Make sure input_data is a dictionary
+        # Example: {"age": 25, "gender": "m", "score": 8}
+        features_df = pd.DataFrame([input_data])
 
-        # Ensure all required features are present
-        missing_features = set(self.feature_names) - set(features_df.columns)
-        for feature in missing_features:
-            features_df[feature] = 0  # Default value
+        # Handle categorical encoding
+        if 'gender' in features_df.columns:
+            features_df['gender'] = features_df['gender'].map({'m': 1, 'f': 0})
 
-        # Reorder columns to match training data
-        features_df = features_df[self.feature_names]
+        # Scale only numeric columns
+        numeric_features = features_df.select_dtypes(include=['number'])
+        features_scaled = self.scaler.transform(numeric_features)
 
-        # Scale features
-        features_scaled = self.scaler.transform(features_df)
-
-        # Make prediction
-        prediction = self.best_model.predict(features_scaled)[0]
-        probability = self.best_model.predict_proba(features_scaled)[0, 1]
-
+        # Predict
+        prediction = self.model.predict(features_scaled)
+        probability = self.model.predict_proba(features_scaled)[0][1]
         return prediction, probability
+
+
 
     def q_chat_questions(self):
         """
